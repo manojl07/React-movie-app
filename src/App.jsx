@@ -3,10 +3,9 @@ import Search from "./components/Search";
 import { Spinner } from "flowbite-react";
 import MovieCard from "./components/MovieCard";
 // import Spinner from './components/Spinner'
-import { useDebounce, useSetState } from 'react-use'
+import { useDebounce, useSetState } from "react-use";
 import { getTrendingMovies, updateSearchCount } from "./appwrite";
 import { useRef } from "react";
-
 
 const API_BASE_URL = "https://api.themoviedb.org/3";
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -24,31 +23,33 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [movieList, setMovieList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [debounceSearchTerm, setDebounceSearchTerm] = useState('')
-  const [trendingMovies, setTrendingMovies] = useState([])
+  const [debounceSearchTerm, setDebounceSearchTerm] = useState("");
+  const [trendingMovies, setTrendingMovies] = useState([]);
 
   const trendingRef = useRef(null);
 
   useDebounce(
-  () => {
-    if (searchTerm.trim() === "") {
-      setDebounceSearchTerm("");
-      return;
-    }
-    setDebounceSearchTerm(searchTerm);
-  },
-  500,
-  [searchTerm]
-);
+    () => {
+      if (searchTerm.trim() === "") {
+        setDebounceSearchTerm("");
+        return;
+      }
+      setDebounceSearchTerm(searchTerm);
+    },
+    500,
+    [searchTerm],
+  );
 
+  const fetchMovies = async (query = "") => {
+  console.log("API KEY:", API_KEY); // 👈 ADD HERE
 
-  const fetchMovies = async (query = '') => {
-    setIsLoading(true);
-    setErrorMessage("");
-    try {
-      const endpoint = query 
-      ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&api_key=${API_KEY}`
-      : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&api_key=${API_KEY}`;
+  setIsLoading(true);
+  setErrorMessage("");
+
+  try {
+      const endpoint = query
+        ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}&api_key=${API_KEY}`
+        : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&api_key=${API_KEY}`;
 
       const response = await fetch(endpoint);
 
@@ -66,8 +67,10 @@ const App = () => {
 
       setMovieList(data.results || []);
 
-      if(query && data.results.length > 0){
+      if (query && data.results.length > 0) {
         await updateSearchCount(query, data.results[0]);
+        console.log(data.results[0]);
+        
       }
 
       console.log(data);
@@ -79,17 +82,15 @@ const App = () => {
     }
   };
 
-  const loadTrendingMovies =  async () => {
+  const loadTrendingMovies = async () => {
     try {
       const movies = await getTrendingMovies();
 
       setTrendingMovies(movies);
     } catch (error) {
       console.error(`Error fetching trending movies: ${error}`);
-      
     }
-  }
-
+  };
 
   useEffect(() => {
     fetchMovies(debounceSearchTerm);
@@ -98,8 +99,7 @@ const App = () => {
 
   useEffect(() => {
     loadTrendingMovies();
-  }, [])
-  
+  }, []);
 
   return (
     <main>
@@ -115,32 +115,32 @@ const App = () => {
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
 
-{trendingMovies.length > 0 && (
-  <section className="trending">
-    <h2>Trending Movies</h2>
+        {trendingMovies.length > 0 && (
+          <section className="trending">
+            <h2>Trending Movies</h2>
 
-    <ul
-      ref={trendingRef}
-      onWheel={(e) => {
-        e.preventDefault();
-        trendingRef.current.scrollLeft += e.deltaY;
-      }}
-    >
-      {trendingMovies.map((movie, index) => (
-        <li key={movie.$id}>
-          <p>{index + 1}</p>
-          <img src={movie.poster_url} alt={movie.title} />
-        </li>
-      ))}
-    </ul>
-  </section>
-)}
+            <ul
+              ref={trendingRef}
+              onWheel={(e) => {
+                e.preventDefault();
+                trendingRef.current.scrollLeft += e.deltaY;
+              }}
+            >
+              {trendingMovies.map((movie, index) => (
+                <li key={movie.$id}>
+                  <p>{index + 1}</p>
+                  <img src={movie.poster_url} alt={movie.title} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="all-movies">
           <h2 className="">All Movies</h2>
 
           {isLoading ? (
-            <div  className="flex justify-center items-center h-full">
+            <div className="flex justify-center items-center h-full">
               <Spinner className="fill-indigo-600" />
             </div>
           ) : errorMessage ? (
@@ -148,7 +148,7 @@ const App = () => {
           ) : (
             <ul>
               {movieList.map((movie) => (
-               <MovieCard key={movie.id} movie={movie} />
+                <MovieCard key={movie.id} movie={movie} />
               ))}
             </ul>
           )}
